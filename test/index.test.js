@@ -175,7 +175,10 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 }
             });
             jwtMock.decode.returns({
-                kid: 'f3907a3b-4d2e-426b-a9d5-111b35752d58'
+                header: {
+                    kid: 'f3907a3b-4d2e-426b-a9d5-111b35752d58'
+                },
+                payload: {}
             });
 
             return server.inject({
@@ -201,7 +204,10 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 }
             });
             jwtMock.decode.returns({
-                kid: 'dbe0be9b-4cb3-4bcc-8e27-16f8f52313e4'
+                header: {
+                    kid: 'dbe0be9b-4cb3-4bcc-8e27-16f8f52313e4'
+                },
+                payload: {}
             });
 
             return server.inject({
@@ -227,7 +233,10 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 }
             });
             jwtMock.decode.returns({
-                kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                header: {
+                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                },
+                payload: {}
             });
             jwtMock.verify.throws(new Error('Invalid JWT'));
 
@@ -250,12 +259,19 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 path: '/protected-route',
                 config: {
                     auth: 'default',
-                    handler: (request, reply) => reply(request.auth.credentials)
+                    handler: (request, reply) => reply({
+                        credentials: request.auth.credentials,
+                        artifacts: request.auth.artifacts
+                    })
                 }
             });
             jwtMock.decode.returns({
-                kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                sub: 'sample user'
+                header: {
+                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                },
+                payload: {
+                    sub: 'sample user'
+                }
             });
             jwtMock.verify.returns();
 
@@ -266,8 +282,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 }
             }).then((reply) => {
                 assert.equal(reply.statusCode, 200);
-                assert.property(reply.result, 'sub');
-                assert.equal(reply.result.sub, 'sample user');
+                assert.property(reply.result, 'credentials');
+                assert.property(reply.result.credentials, 'sub');
+                assert.equal(reply.result.credentials.sub, 'sample user');
+                assert.property(reply.result, 'artifacts');
+                assert.property(reply.result.artifacts, 'token');
+                assert.equal(reply.result.artifacts.token, 'FOOBARBAZ');
             });
         });
     });
@@ -408,8 +428,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                    sub: 'sample user'
+                    header: {
+                        kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 
@@ -445,8 +469,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                    sub: 'sample user'
+                    header: {
+                        kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 
@@ -485,8 +513,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                    sub: 'sample user'
+                    header: {
+                        kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 
@@ -529,8 +561,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                    sub: 'sample user'
+                    header: {
+                        kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 
@@ -582,8 +618,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: '123c5121-185f-45b1-9bcb-e16c7c09517b',
-                    sub: 'sample user'
+                    header: {
+                        kid: '123c5121-185f-45b1-9bcb-e16c7c09517b'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 
@@ -634,8 +674,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
                     }
                 });
                 jwtMock.decode.returns({
-                    kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c',
-                    sub: 'sample user'
+                    header: {
+                        kid: 'f8b86ef5-6f71-40bd-8add-529b4201834c'
+                    },
+                    payload: {
+                        sub: 'sample user'
+                    }
                 });
                 jwtMock.verify.returns();
 

@@ -47,14 +47,12 @@ const Hapi = require('hapi');
 const server = new Hapi.Server();
 
 server.connection({ port: 12345 });
-server.register({
-    register: require('hapi-auth-dynamic-jwt'),
-    options: {
+server.register(require('hapi-auth-dynamic-jwt'))
+.then(() => {
+    server.auth.strategy('default', 'dynamic-jwt', {
         keys: require('./keys.json'),
         maxAge: '1h'
-    }
-}).then(() => {
-    server.auth.strategy('default', 'dynamic-jwt');
+    });
     server.route({
         method: 'GET',
         path: '/protected-route',

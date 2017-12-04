@@ -318,15 +318,19 @@ internals.implementation = (server, config) => {
             }
 
             const token = parsedHeader[1];
-            const credentials = Jwt.decode(token);
+            const parsedToken = Jwt.decode(token, {
+                complete: true
+            });
 
             // Check if it's valid JWT
-            if (!credentials) {
+            if (!parsedToken) {
                 return replyError('Invalid JWT format');
             }
 
+            const { payload, header } = parsedToken;
+
             // Ensure we have the key requested
-            return authObject.getKey(credentials.kid, (keyError, signingKey) => {
+            return authObject.getKey(header.kid, (keyError, signingKey) => {
                 if (keyError) {
                     server.log(['auth', 'error', req.name], keyError.toString());
 
@@ -347,7 +351,10 @@ internals.implementation = (server, config) => {
                     return replyError(`Invalid JWT signature: ${jwtError.toString()}`);
                 }
 
-                return reply.continue({ credentials });
+                return reply.continue({
+                    credentials: payload,
+                    artifacts: { token }
+                });
             });
         }
     };
