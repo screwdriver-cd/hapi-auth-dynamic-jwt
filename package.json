@@ -42,7 +42,7 @@
     "eslint": "^4.9.0",
     "eslint-config-screwdriver": "^3.0.0",
     "hapi": "^16.6.2",
-    "jenkins-mocha": "^5.0.0",
+    "jenkins-mocha": "^6.0.0",
     "mockery": "^2.1.0",
     "nock": "^9.0.22",
     "sinon": "^4.0.1"
