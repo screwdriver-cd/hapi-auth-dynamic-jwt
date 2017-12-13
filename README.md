@@ -21,7 +21,6 @@ This plugin was written to solve two scenarios:
  - [X] Customizable timeout
  - [X] Customize issuer name
  - [X] Uses semaphore to prevent concurrent requests
- - [ ] Supports exposing Realm and requested Scope
 
 ## Usage
 
@@ -50,7 +49,20 @@ server.connection({ port: 12345 });
 server.register(require('hapi-auth-dynamic-jwt'))
 .then(() => {
     server.auth.strategy('default', 'dynamic-jwt', {
-        keys: require('./keys.json'),
+        keys: [
+            {
+                private: 'FAKE_PRIVATE_KEY1',
+                public: 'FAKE_PUBLIC_KEY2',
+                algorithm: 'es512',
+                expires: 1509480014
+            },
+            {
+                private: 'FAKE_PRIVATE_KEY2',
+                public: 'FAKE_PUBLIC_KEY2',
+                algorithm: 'es512',
+                expires: 1514209030
+            }
+        ],
         maxAge: '1h'
     });
     server.route({
@@ -80,11 +92,11 @@ server.register(require('hapi-auth-dynamic-jwt'))
                         entity: {
                             fullname: 'Mr. Bean',
                             address: '12 Arbor Road, London'
-                        }
+                        },
+                        scope: [
+                            'admin'
+                        ]
                     },
-                    scope: [
-                        'admin'
-                    ],
                     time: '5m'
                 }))
         }

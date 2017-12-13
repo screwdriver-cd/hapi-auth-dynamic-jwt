@@ -315,13 +315,11 @@ describe('hapi-auth-dynamic-jwt test', () => {
             assert.equal(server.auth.api.default.createJWT({
                 subject: 'foo',
                 payload: { a: 'b' },
-                scope: ['abc'],
                 time: '1s'
             }), 'aaaaaaaaaa.bbbbbbbbbbb.cccccccccccc');
             assert.calledWithMatch(jwtMock.sign,
                 {
-                    a: 'b',
-                    scope: ['abc']
+                    a: 'b'
                 },
                 'FAKE_PRIVATE_KEY15000',
                 {
@@ -339,7 +337,6 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 server.auth.api.default.createJWT({
                     subject: 'foo',
                     payload: { a: 'b' },
-                    scope: ['abc'],
                     time: '5h'
                 });
                 assert.fail();
@@ -353,7 +350,6 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 server.auth.api.default.createJWT({
                     subject: 'foo',
                     payload: { a: 'b' },
-                    scope: ['abc'],
                     time: '6d'
                 });
                 assert.fail();
@@ -368,13 +364,11 @@ describe('hapi-auth-dynamic-jwt test', () => {
             assert.equal(server.auth.api.default.createJWT({
                 subject: 'foo',
                 payload: { a: 'b' },
-                scope: ['abc'],
                 time: '1m'
             }), 'aaaaaaaaaa.bbbbbbbbbbb.cccccccccccc');
             assert.calledWithMatch(jwtMock.sign,
                 {
-                    a: 'b',
-                    scope: ['abc']
+                    a: 'b'
                 },
                 'FAKE_PRIVATE_KEY1300000',
                 {

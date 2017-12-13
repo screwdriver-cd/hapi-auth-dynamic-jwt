@@ -73,10 +73,7 @@ internals.SCHEMA_CREATE = Joi.object({
         .label('Subject of the JWT'),
     payload: Joi.object()
         .required()
-        .label('Describing attributes about the subject'),
-    scope: Joi.array()
-        .default([])
-        .label('List of permissions applied to this JWT'),
+        .label('Contents of the decoded JWT'),
     time: Joi.string()
         .required()
         .label('Life of JWT')
@@ -128,7 +125,6 @@ internals.loadLocal = (authConfig) => {
              * @param  {Object}  jwtConfig
              * @param  {String}  jwtConfig.subject Thing that this represents
              * @param  {Object}  jwtConfig.payload Attributes about the subject
-             * @param  {Array}   jwtConfig.scope   List of privileges
              * @param  {String}  jwtConfig.time    How long the credential will last
              * @return {String}                    Signed JSON Web Token
              */
@@ -150,12 +146,7 @@ internals.loadLocal = (authConfig) => {
                     throw new Error('No valid key exists to support this time range');
                 }
 
-                // Ensure that scope is included in the payload
-                const payload = jwtConfig.payload;
-
-                payload.scope = parsedConfig.scope;
-
-                return Jwt.sign(payload, signingKey.private, {
+                return Jwt.sign(parsedConfig.payload, signingKey.private, {
                     algorithm: signingKey.algorithm,
                     expiresIn: parsedConfig.time,
                     notBefore: 0,
