@@ -1,6 +1,6 @@
 {
   "name": "hapi-auth-dynamic-jwt",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Hapi plugin to authenticate and issue JSON Web Tokens based on rotating secrets",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,9 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:screwdriver-cd/hapi-auth-dynamic-jwt.git"
+  },
+  "engines": {
+    "node": ">=6"
   },
   "homepage": "https://github.com/screwdriver-cd/hapi-auth-dynamic-jwt",
   "bugs": "https://github.com/screwdriver-cd/screwdriver/issues",
