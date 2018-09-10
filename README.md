@@ -43,9 +43,10 @@ When providing keys for server-mode, these are the fields required:
 
 ```js
 const Hapi = require('hapi');
-const server = new Hapi.Server();
+const server = Hapi.server({
+    port: 12345
+});
 
-server.connection({ port: 12345 });
 server.register(require('hapi-auth-dynamic-jwt'))
 .then(() => {
     server.auth.strategy('default', 'dynamic-jwt', {
@@ -108,11 +109,11 @@ server.register(require('hapi-auth-dynamic-jwt'))
 
 ```js
 const Hapi = require('hapi');
-const server = new Hapi.Server();
-
-server.connection({ port: 12345 });
+const server = Hapi.server({
+    port: 12345
+});
 server.register({
-    register: require('hapi-auth-dynamic-jwt'),
+    plugin: require('hapi-auth-dynamic-jwt'),
     options: {
         remoteUri: 'https://example.com/keys',
         timeout: 1

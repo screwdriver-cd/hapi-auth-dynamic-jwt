@@ -13,7 +13,7 @@
     "url": "git@github.com:screwdriver-cd/hapi-auth-dynamic-jwt.git"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=8"
   },
   "homepage": "https://github.com/screwdriver-cd/hapi-auth-dynamic-jwt",
   "bugs": "https://github.com/screwdriver-cd/screwdriver/issues",
@@ -44,7 +44,6 @@
     "chai-as-promised": "^7.1.1",
     "eslint": "^4.9.0",
     "eslint-config-screwdriver": "^3.0.0",
-    "hapi": "^16.6.2",
     "jenkins-mocha": "^6.0.0",
     "mockery": "^2.1.0",
     "nock": "^9.0.22",
@@ -53,6 +52,7 @@
   "dependencies": {
     "aguid": "^2.0.0",
     "boom": "^6.0.0",
+    "hapi": "^17.5.4",
     "joi": "^13.0.0",
     "jsonwebtoken": "^8.1.0",
     "ms": "^2.0.0",

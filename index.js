@@ -106,12 +106,12 @@ internals.loadLocal = (authConfig) => {
         * @param  {String}   keyId Key you are looking for
         * @param  {Function} next  Function to call when done (error, key)
         */
-        getKey: (keyId, next) => {
+        getKey: (keyId) => {
             if (keys[keyId]) {
-                return next(null, keys[keyId]);
+                return new Promise.Resolve(keys[keyId]);
             }
 
-            return next(new Error('Specified Key Id not found'));
+            return new Promise.Reject(new Error('Specified Key Id not found'));
         },
 
         /**
@@ -211,10 +211,17 @@ internals.loadRemote = (authConfig) => {
          * @param  {String}   keyId Key you are looking for
          * @param  {Function} next  Function to call when done (error, key)
          */
-        getKey: (keyId, next) => {
+        getKey: (keyId) => {
+            console.log('in getKey: ', keyId);
             const nextSem = (err, result) => {
                 mutex.leave();
-                next(err, result);
+                if (err) {
+                    console.log('err exists, throwing err');
+                    throw err;
+                }
+                console.log('no error!!!!!!!!!!!!!!!!');
+
+                return result;
             };
 
             // Prevent multiple calls to the remote URI
@@ -232,6 +239,8 @@ internals.loadRemote = (authConfig) => {
                     json: true,
                     timeout: authConfig.timeout
                 }, (reqError, response, body) => {
+                    console.log('req error ---------------------------------: ', reqError);
+                    console.log('returned: ', response.statusCode);
                     if (reqError || response.statusCode !== 200) {
                         const prevError = reqError ||
                             new Error(`Status Code: ${response.statusCode}`);
@@ -268,6 +277,7 @@ internals.loadRemote = (authConfig) => {
  * @return {Object}                      Contains an authenticate function to parse each request
  */
 internals.implementation = (server, config) => {
+    console.log('in implementation');
     const authConfig = Joi.attempt(config, internals.SCHEMA_KEYS,
         'Invalid config for hapi-auth-dynamic-jwt plugin');
     let authObject = {};
@@ -286,10 +296,11 @@ internals.implementation = (server, config) => {
          * Replies with the parsed credentials or an error based on the input from request
          * @method authenticate
          * @param  {HapiRequest}   req     Route handler request object
-         * @param  {HapiReply}     reply   Reply interface
+         * @param  {HapiReply}     h       Response toolkit
          * @return {Function}              Result of Reply interface
          */
-        authenticate: (req, reply) => {
+        authenticate: async (req, h) => {
+            console.log('in authenticate');
             const parsedHeader = internals.REGEX_BEARER.exec(req.headers.authorization);
 
             /**
@@ -298,14 +309,17 @@ internals.implementation = (server, config) => {
              * @param  {String}    message Error message
              * @return {Promise}
              */
-            const replyError = message =>
-                reply(Boom.unauthorized(null, 'Bearer', {
+            const replyError = (message) => {
+                console.log('in boom');
+
+                throw Boom.unauthorized(null, 'Bearer', {
                     error: message
-                }));
+                });
+            };
 
             // Ensure we have the header
             if (!parsedHeader) {
-                return replyError('Missing JWT');
+                replyError('Missing JWT');
             }
 
             const token = parsedHeader[1];
@@ -313,61 +327,80 @@ internals.implementation = (server, config) => {
                 complete: true
             });
 
-            // Check if it's valid JWT
+            // Check if it is a valid JWT
             if (!parsedToken) {
-                return replyError('Invalid JWT format');
+                replyError('Invalid JWT format');
             }
 
             const { payload, header } = parsedToken;
+            let signingKey;
+
+            try {
+                signingKey = await authObject.getKey(header.kid);
+                console.log('signingKey: ', signingKey);
+            } catch (err) {
+                server.log(['auth', 'error', req.name], err.toString());
+
+                console.log('logged error! replying with error');
+
+                throw Boom.unauthorized(null, 'Bearer', {
+                    error: 'Unknown JWT public key ID'
+                });
+            }
 
             // Ensure we have the key requested
-            return authObject.getKey(header.kid, (keyError, signingKey) => {
-                if (keyError) {
-                    server.log(['auth', 'error', req.name], keyError.toString());
+            // return authObject.getKey(header.kid, (keyError, signingKey) => {
+            // console.log('got key: ', signingKey);
+            // console.log('key error: ', keyError);
+            // if (keyError) {
+            //     server.log(['auth', 'error', req.name], keyError.toString());
+            //
+            //     console.log('logged error! replying with error');
+            //
+            //     throw Boom.unauthorized(null, 'Bearer', {
+            //         error: 'Unknown JWT public key ID'
+            //     });
+            //
+            //     // replyError('Unknown JWT public key ID');
+            // }
 
-                    return replyError('Unknown JWT public key ID');
-                }
+            // Check if the key is expired
+            if (signingKey.expires < Date.now() / 1000) {
+                replyError('JWT key has expired');
+            }
 
-                // Check if the key is expired
-                if (signingKey.expires < Date.now() / 1000) {
-                    return replyError('JWT key has expired');
-                }
-
-                // Verify the signature
-                try {
-                    Jwt.verify(token, signingKey.public, {
-                        algorithms: [signingKey.algorithm]
-                    });
-                } catch (jwtError) {
-                    return replyError(`Invalid JWT signature: ${jwtError.toString()}`);
-                }
-
-                return reply.continue({
-                    credentials: payload,
-                    artifacts: { token }
+            // Verify the signature
+            try {
+                Jwt.verify(token, signingKey.public, {
+                    algorithms: [signingKey.algorithm]
                 });
+            } catch (jwtError) {
+                replyError(`Invalid JWT signature: ${jwtError.toString()}`);
+            }
+
+            return h.authenticated({
+                credentials: payload,
+                artifacts: { token }
             });
+            // });
         }
     };
 };
 
-/**
- * Registers the auth plugin and required routes
- * @see http://hapijs.com/api#serverplugins
- * @method register
- * @param  {HapiServer}  server  Hapi Server we are attaching this plugin to
- * @param  {Object}      options Configuration for the plugin
- * @param  {Function}    next    Callback once registration succeeds
- */
-exports.register = (server, options, next) => {
-    // Configure authentication
-    server.auth.scheme('dynamic-jwt', internals.implementation);
+exports.plugin = {
+    name: 'auth',
+    pkg, // Exposes the package name and version number to Hapi
+    version: pkg.version,
 
-    return process.nextTick(next);
+    /**
+     * Registers the auth plugin and required routes
+     * @see http://hapijs.com/api#serverplugins
+     * @async register
+     * @param  {HapiServer}  server  Hapi Server we are attaching this plugin to
+     * @param  {Object}      options Configuration for the plugin
+     */
+    async register(server) {
+        // console.log('server: ', server);
+        server.auth.scheme('dynamic-jwt', internals.implementation);
+    }
 };
-
-/**
- * Exposes the package name and version number to Hapi
- * @type {Object}
- */
-exports.register.attributes = { pkg };

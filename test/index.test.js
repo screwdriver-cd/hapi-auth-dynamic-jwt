@@ -66,8 +66,7 @@ describe('hapi-auth-dynamic-jwt test', () => {
         /* eslint-disable global-require */
         plugin = require('../index');
         /* eslint-enable global-require */
-        server = new hapi.Server();
-        server.connection({
+        server = hapi.server({
             port: 1234
         });
     });
@@ -84,19 +83,19 @@ describe('hapi-auth-dynamic-jwt test', () => {
     });
 
     describe('registration', () => {
-        it('registers the plugin', () =>
-            server.register(plugin).then(() =>
-                server.auth.strategy('default', 'dynamic-jwt', false, {
-                    keys: [randomKey()]
-                })
-            ).then(() => {
+        it('registers the plugin', async () => {
+            server.register(plugin).then(() => {
+                server.auth.strategy('default', 'dynamic-jwt', {
+                    keys: [randomKey()],
+                    maxAge: '1h'
+                });
                 assert.property(server.registrations, 'hapi-auth-dynamic-jwt');
-            })
-        );
+            });
+        });
 
         it('requires keys', () =>
             server.register(plugin).then(() =>
-                server.auth.strategy('default', 'dynamic-jwt', false)
+                server.auth.strategy('default', 'dynamic-jwt', [])
             ).then(() =>
                 assert.fail()
             ).catch(err => assert.match(err.toString(),
@@ -105,7 +104,7 @@ describe('hapi-auth-dynamic-jwt test', () => {
 
         it('requires keys in the right format', () =>
             server.register(plugin).then(() =>
-                server.auth.strategy('default', 'dynamic-jwt', false, {
+                server.auth.strategy('default', 'dynamic-jwt', {
                     keys: [{}]
                 })
             ).then(() =>
@@ -116,7 +115,7 @@ describe('hapi-auth-dynamic-jwt test', () => {
 
     describe('validation', () => {
         beforeEach(() => server.register(plugin)
-            .then(() => server.auth.strategy('default', 'dynamic-jwt', false, {
+            .then(() => server.auth.strategy('default', 'dynamic-jwt', {
                 keys: [randomKey(), randomKey('5m', true)]
             }))
         );
@@ -125,9 +124,9 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({})
+                handler: () => ({}),
+                options: {
+                    auth: 'default'
                 }
             });
 
@@ -145,9 +144,9 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({})
+                handler: () => ({}),
+                options: {
+                    auth: 'default'
                 }
             });
             jwtMock.decode.returns(null);
@@ -169,9 +168,9 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({})
+                handler: () => ({}),
+                options: {
+                    auth: 'default'
                 }
             });
             jwtMock.decode.returns({
@@ -198,9 +197,9 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({})
+                handler: () => ({}),
+                options: {
+                    auth: 'default'
                 }
             });
             jwtMock.decode.returns({
@@ -227,9 +226,9 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({})
+                handler: () => ({}),
+                options: {
+                    auth: 'default'
                 }
             });
             jwtMock.decode.returns({
@@ -257,12 +256,12 @@ describe('hapi-auth-dynamic-jwt test', () => {
             server.route({
                 method: 'GET',
                 path: '/protected-route',
-                config: {
-                    auth: 'default',
-                    handler: (request, reply) => reply({
-                        credentials: request.auth.credentials,
-                        artifacts: request.auth.artifacts
-                    })
+                handler: request => ({
+                    credentials: request.auth.credentials,
+                    artifacts: request.auth.artifacts
+                }),
+                options: {
+                    auth: 'default'
                 }
             });
             jwtMock.decode.returns({
@@ -294,7 +293,7 @@ describe('hapi-auth-dynamic-jwt test', () => {
 
     describe('create', () => {
         beforeEach(() => server.register(plugin)
-            .then(() => server.auth.strategy('default', 'dynamic-jwt', false, {
+            .then(() => server.auth.strategy('default', 'dynamic-jwt', {
                 keys: [randomKey('5s'), randomKey('5m')],
                 maxAge: '6h'
             }))
@@ -386,7 +385,7 @@ describe('hapi-auth-dynamic-jwt test', () => {
         const keys = [randomKey('5s', true), randomKey('45s'), randomKey('5m'), randomKey('10m')];
 
         beforeEach(() => server.register(plugin)
-            .then(() => server.auth.strategy('default', 'dynamic-jwt', false, {
+            .then(() => server.auth.strategy('default', 'dynamic-jwt', {
                 maxAge: '1m',
                 keys
             }))
@@ -410,15 +409,15 @@ describe('hapi-auth-dynamic-jwt test', () => {
                 .reply(404);
 
             return server.register(plugin).then(() => {
-                server.auth.strategy('default', 'dynamic-jwt', false, {
+                server.auth.strategy('default', 'dynamic-jwt', {
                     remoteUri: 'https://example.com/keys'
                 });
                 server.route({
                     method: 'GET',
                     path: '/protected-route',
-                    config: {
-                        auth: 'default',
-                        handler: (request, reply) => reply(request.auth.credentials)
+                    handler: request => request.auth.credentials,
+                    options: {
+                        auth: 'default'
                     }
                 });
                 jwtMock.decode.returns({
